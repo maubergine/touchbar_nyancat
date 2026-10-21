@@ -1,0 +1,32 @@
+name: CI
+
+# The project's own settings are too old for current Xcode (macOS 10.12 target, Swift 3), so the build overrides
+# those two settings and leaves the code as it is.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          xcodebuild build -project touchbar_nyancat.xcodeproj -scheme touchbar_nyancat -configuration Debug \
+            -derivedDataPath "$RUNNER_TEMP/dd" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
+            MACOSX_DEPLOYMENT_TARGET=12.0 SWIFT_VERSION=4.0
